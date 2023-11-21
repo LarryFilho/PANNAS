@@ -8,6 +8,9 @@
         mov ah,02
         int 21h
 
+        mov dl,13
+        int 21h
+
         pop ax
         pop dx
     endm
@@ -31,7 +34,38 @@
         pop ax
     endm
 
+    LIMPAENTER MACRO
+        PUSH BX
+        PUSH DX
 
+        INC BX
+        MOV DL, [BX]
+        INC BX
+        ADD BX, DX
+        MOV DL, ' '
+
+        MOV [BX], DL
+        
+        POP DX
+        POP BX
+    ENDM
+
+    PRINT_ESPACO MACRO
+        push bx
+        push dx
+        push cx
+
+        mov cx,2
+    espa:    
+        mov dl, ' '
+        mov ah,02
+        int 21H
+        loop espa
+
+        pop cx
+        pop dx
+        pop bx
+    endm
 
 .stack 100h
 .data
@@ -46,6 +80,7 @@
 
     msg2 db 10,13,'DIGITE NOTA DO ALUNO $'
 
+    LEGENDA DB 'NOME',12 DUP (' '),'P1 ','P2 ','P3 ', 'MF$'
 
 .code
 
@@ -60,9 +95,8 @@ main proc
     xor bx,bx
     xor si,si
 
-    lea dx,dados+2
     call print
-
+fim:
     mov ah,4ch
     int 21h
 main endp
@@ -81,6 +115,7 @@ volta2:
 
     mov ah,0ah
     int 21h
+    LIMPAENTER
     add si,17
 volta:
     push dx
@@ -145,18 +180,63 @@ ret
 input endp
 
 print proc
-    mov ch,5
-    mov cl,3
-    xor bx,bx
-out_lop: 
-    mov ah,09h
-    int 21h
-    inc si
-    cmp dx,'?'
-    jne out_lop
-in_lop:
 
-ret
+    xor di,di
+    xor cx,cx
+    mov ch, 5
+    mov bx,2
+    mov di,17
+    push bx
+    push di
+    lea dx, LEGENDA
+    PRINT_STRING
+    PULA_LINHA
+teste:
+    mov dl, dados + bx
+    cmp dx,'?'
+    je sair2
+
+    mov ah,02
+    int 21h
+    inc bx
+    inc cl
+    jmp teste
+sair2:
+    mov bh,15
+    dec cl
+    sub bh,cl
+lope:
+    mov dl,' '
+    mov ah,02
+    int 21H
+    dec bh
+    jnz lope
+lop:
+    mov dl, dados + di
+    cmp dx,'?'
+    je algum
+
+    add dl,30h
+    mov ah,02
+    int 21h
+
+   PRINT_ESPACO
+
+    inc di
+    jmp lop
+
+algum:
+    PULA_LINHA
+    pop di
+    pop bx
+    add bx,21
+    add di,21
+    push bx
+    push di
+    mov cl,00h
+    dec ch
+    jnz teste
+jmp fim
 print endp
 
 end main
