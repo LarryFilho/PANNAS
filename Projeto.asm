@@ -67,10 +67,34 @@
         pop bx
     endm
 
+    input_numero macro
+    comeco:
+        mov ah, 01h
+        int 21h
+
+        cmp al, 13
+        je  final 
+
+        mov ah, 0  
+        sub al, 48
+
+        mov cl, al
+        mov al, bl
+
+        mul dl
+
+        add al, cl   ; previous value + new value ( after previous value is multiplyed with 10 )
+        mov bl, al
+
+        jmp comeco    
+
+        final:
+        endm
+
 .stack 100h
 .data
-
-    dados db 5 dup(15,?,15 dup('?'),'?','?','?','?')
+            
+    dados  db 5 dup(15,?,15 dup('?'),'?','?','?','?')
           ;db 1 dup(15,?,15 dup('$')),'?','?','?','?'
           ;b 1 dup(15,?,15 dup('$')),'?','?','?','?'
           ;db 1 dup(15,?,15 dup('$')),'?','?','?','?'
@@ -82,6 +106,21 @@
 
     LEGENDA DB 'NOME',12 DUP (' '),'P1 ','P2 ','P3 ', 'MF$'
 
+    msg3 db 10,13,'QUAL AUNO DESEJA ALTERAR A NOTA:$'
+
+    msg4 db 10,13,'DIGITE A NOVA NOTA:$'
+
+    BUFFER db 5 dup(15,?,15 dup('?'),'?','?','?','?')
+
+    FFLUSH DB 15 DUP(' ')
+
+    msg5 db 10,13,'NOME INVALIDO!!$'
+
+    msg6 db 10,13,'QUAL PROVA DESEJA ALTERAR:$'
+
+    msg7 db 10,13,'P1-1   P2-2   P3-3$'
+
+
 .code
 
 main proc
@@ -91,10 +130,24 @@ main proc
 
     lea dx,dados[bx + si]
     call input
-    
+
+    call print
+
+cont_main:
+    lea dx,msg3
+    mov ah,09
+    int 21h
+
     xor bx,bx
     xor si,si
 
+    lea dx,BUFFER
+
+    call compara_string
+
+    xor bx,bx
+    xor si,si
+    lea dx,dados[bx + si]
     call print
 fim:
     mov ah,4ch
@@ -179,6 +232,7 @@ sair:
 ret
 input endp
 
+
 print proc
 
     xor di,di
@@ -236,7 +290,105 @@ algum:
     mov cl,00h
     dec ch
     jnz teste
-jmp fim
+
+jmp cont_main
 print endp
+
+compara_string proc
+
+    mov ah,0ah
+    int 21h
+
+    lea bx, BUFFER
+
+    mov dx,[bx + 1]
+    mov dh,00h
+
+    mov bx, dx
+    mov ch, bl
+    mov cl,1
+
+    lea si,dados + 2
+    lea di,buffer + 2      
+volta3:
+    cmp ch,0
+    jz correto
+    mov dx,[si]
+    mov bx,[di]
+
+    mov dh,00h
+    mov bh,00h
+
+    cmp dx,bx
+    jnz diferente
+    inc si
+    inc di
+    dec ch
+    jmp volta3
+
+diferente:
+    xor ax,ax
+    push cx
+    mov al,21
+    mul cl
+    mov ch,00h
+    lea si, dados + 2    
+    add si,cx
+    lea di, buffer +2
+    add di,cx
+    pop cx
+    inc cl
+
+
+
+
+
+correto:
+    PULA_LINHA
+
+    lea dx,msg7
+    mov ah,09
+    int 21h
+
+    lea dx,msg6
+    mov ah,09
+    int 21h
+
+    mov ah, 01h
+    int 21h
+
+    PULA_LINHA
+
+    xor dx,dx
+
+    sub al,30h
+    mov dl,al
+    dec dl
+
+    xor ax,ax
+    push cx
+    mov al,17
+    mul cl
+    mov ch,00h
+    lea si, dados
+    add si,cx
+    add si,dx
+    lea di, buffer
+    add di,cx
+    add di,dx
+    pop cx
+    inc cl
+
+    lea dx,msg4
+    mov ah,09
+    int 21h
+
+    xor bx,bx
+    input_numero
+
+    mov si,bx
+
+    ret
+compara_string endp
 
 end main
