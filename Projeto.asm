@@ -68,6 +68,12 @@
     endm
 
     input_numero macro
+        push ax
+        push bx
+        push cx
+        push dx
+
+        mov bl,10
     comeco:
         mov ah, 01h
         int 21h
@@ -89,6 +95,10 @@
         jmp comeco    
 
         final:
+        pop dx
+        pop cx
+        pop dx
+        pop ax
         endm
 
 .stack 100h
@@ -145,6 +155,7 @@ cont_main:
 
     call compara_string
 
+cont_main2:
     xor bx,bx
     xor si,si
     lea dx,dados[bx + si]
@@ -231,7 +242,6 @@ sair:
     
 ret
 input endp
-
 
 print proc
 
@@ -371,24 +381,45 @@ correto:
     mul cl
     mov ch,00h
     lea si, dados
-    add si,cx
+    add si,ax
     add si,dx
     lea di, buffer
-    add di,cx
+    add di,ax
     add di,dx
     pop cx
     inc cl
+    push cx
 
     lea dx,msg4
     mov ah,09
     int 21h
 
-    xor bx,bx
-    input_numero
+    mov dl,10
+    mov bl,0
+    comeco3:
+        mov ah, 01h
+        int 21h
 
-    mov si,bx
+        cmp al, 13
+        je  final3 
 
-    ret
+        mov ah, 0  
+        sub al, 48
+
+        mov cl, al
+        mov al, bl
+
+        mul dl
+
+        add al, cl   ; previous value + new value ( after previous value is multiplyed with 10 )
+        mov bl, al
+
+        jmp comeco3   
+
+    final3:
+
+    mov [si],bx
+jmp cont_main2
 compara_string endp
 
 end main
